@@ -1,0 +1,47 @@
+version: '3.1'
+
+services:
+  motherbase:
+    image: 127.0.0.1:5000/motherbase
+    build: motherbase
+    ports:
+      - 1337:1337
+    environment:
+      DATABASE_URL: "mongodb://root:pass@pixel-db:27017"
+
+  client:
+    image: 127.0.0.1:5000/client
+    build: client
+    deploy:
+      mode: global
+
+  pixel-db:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: pass
+
+  pixel-db-monitor:
+    image: mongo-express
+    restart: always
+
+    ports:
+      - 8081:8081
+
+    environment:
+      ME_CONFIG_MONGODB_SERVER: pixel-db
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: pass
+
+  pixel-proxy:
+    image: 127.0.0.1:5000/pixel-proxy
+    build: pixel-proxy
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - pixel-db-monitor

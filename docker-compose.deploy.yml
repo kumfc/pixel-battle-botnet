@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+  motherbase:
+    image: 127.0.0.1:5000/motherbase
+    build: motherbase
+    environment:
+      DATABASE_URL: "mongodb://root:aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj@pixel-db:27017"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  client:
+    image: 127.0.0.1:5000/client
+    build: client
+    dns:
+      - 8.8.8.8
+
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == worker
+
+  pixel-db:
+    image: mongo
+    restart: always
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj
+
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  pixel-db-monitor:
+    image: mongo-express
+    restart: always
+
+    environment:
+      ME_CONFIG_MONGODB_SERVER: pixel-db
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj
+
+  pixel-proxy:
+    image: 127.0.0.1:5000/pixel-proxy
+    build: pixel-proxy
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - pixel-db-monitor
+      - motherbase
