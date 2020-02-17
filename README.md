@@ -8,8 +8,8 @@ Some of the features remains unpolished so they are not going to be in this rele
 ![](https://github.com/kumfc/pixel-battle-botnet/raw/master/pxb-botnet.png)
 
 
-**Running on single machine:**\
-*Running on multiple machines is pointless until you have 1000+ bots*
+**Deploying on single machine:**\
+*Deploying it on multiple machines is pointless until you have 1000+ bots*
 
 0. Set client node role to manager
 
