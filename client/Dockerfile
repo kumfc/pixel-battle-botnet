@@ -7,7 +7,7 @@ COPY Pipfile.lock /
 RUN pip install pipenv && pipenv install --system --deploy
 
 COPY app /app
-WORKDIR /app
+WORKDIR /
 
 
-CMD ["python", "main.py"]
+CMD ["python", "-m", "app"]

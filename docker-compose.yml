@@ -7,7 +7,7 @@ services:
     ports:
       - 1337:1337
     environment:
-      DATABASE_URL: "mongodb://root:pass@pixel-db:27017"
+      DATABASE_URL: "mongodb://root:aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj@pixel-db:27017"
 
   client:
     image: 127.0.0.1:5000/client
@@ -23,7 +23,7 @@ services:
 
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: pass
+      MONGO_INITDB_ROOT_PASSWORD: aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj
 
   pixel-db-monitor:
     image: mongo-express
@@ -35,7 +35,7 @@ services:
     environment:
       ME_CONFIG_MONGODB_SERVER: pixel-db
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: pass
+      ME_CONFIG_MONGODB_ADMINPASSWORD: aJM3NQV9qSc7gZ3ijNpLTKci0O9TuTxRmvOpFAtkx3AZU6LAq4SWYiBIRPY8oTTj
 
   pixel-proxy:
     image: 127.0.0.1:5000/pixel-proxy

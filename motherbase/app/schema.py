@@ -1,6 +1,7 @@
+from random import randint
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 class User(BaseModel):
@@ -8,6 +9,15 @@ class User(BaseModel):
     vk_token: str
     vk_websocket: str
     client: str = None
+    delay: int = -1
+
+    @validator('delay', pre=True, always=True)
+    def set_delay(cls, v):
+        result = v
+        if result == -1:
+            result = randint(0, 100)
+
+        return result
 
 
 class AddUsersSchema(BaseModel):

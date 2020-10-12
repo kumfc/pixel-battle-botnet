@@ -16,6 +16,7 @@ services:
     build: client
     dns:
       - 8.8.8.8
+    hostname: '{{.Node.Hostname}}'
 
     deploy:
       mode: global

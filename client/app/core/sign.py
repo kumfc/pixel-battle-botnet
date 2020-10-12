@@ -1,6 +1,7 @@
 import struct
 import js2py as js
-import core.logger as log
+import app.utils.logger as log
+from app import config
 
 
 def get_sign(pw):
@@ -13,11 +14,11 @@ def get_sign(pw):
 def prepare_pixel_packet(x, y, color, flag = 0):
     e = {'color': color, 'flag': flag, 'x': x, 'y': y}
     packet = convert(e)
-    log.info('Painting %s' % str([x, y, color]))
+    if config.drawlog:
+        log.info(f'Painting {[x, y, color]}, sign {struct.pack("<L", packet)}')
     return struct.pack('<L', packet)
 
 
 def convert(e):
     t = e['color'] + e['flag'] * 25
-    return e['x'] + e['y'] * 1590 + 636000 * t
-
+    return e['x'] + e['y'] * config.max_width + config.field_size * t

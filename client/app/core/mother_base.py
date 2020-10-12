@@ -1,66 +1,60 @@
+import socket
+import time
 import asyncio
-import aiohttp
 import json
 import uuid
-import core.globals as g
-import core.logger as log
-from core.user import User
+from app.main import g
+import app.utils.logger as log
+import app.utils.req as r
+from app.core.user import User
 
 
 class MotherBase:
-
-    def __init__(self, mother_ws):
+    def __init__(self, mother_url):
         self.alive = False
-        self.ws_url = mother_ws
-        self.id = str(uuid.uuid4())
+        self.url = mother_url
+        # self.id = str(uuid.uuid4())
+        self.id = socket.gethostname()
 
-        self.start()
+    async def run_interaction_loop(self):
+        while True:
+            if len(g.task_handler) == 0:
+                await self.get_tasks()
+            if int(time.time()) % 20 == 0:
+                await self.send_stats()
+            await asyncio.sleep(1)
 
-    def start(self):
-        asyncio.run(self.connect())
+    async def shutdown(self):
+        log.warning(f'Client shutting down...')
+        await r.post(f'{self.url}/c/shutdown', data={'id': self.id})
 
-    async def process_message(self, ws, text):
-        try:
-            data = json.loads(text)
-        except:
-            return log.warning('Unexpected stuff was thrown from mother base :p')
+    async def get_tasks(self):
+        can_run = int(g.stats.get_stats_assoc()['can_draw'])
+        data = await r.post(f'{self.url}/c/get-pixels', data={'id': self.id, 'expected_count': can_run})
 
-        if data['command'] == 'statistics':
-            response = {'type': 'statistics', 'data': g.c_globals.stats.get_stats_assoc()}
-            log.debug('MotherBase requested stats: %s' % str(response))
-            await ws.send_json(response)
-        elif data['command'] == 'pixels' and 'data' in data:
-            log.info('Received %s tasks from mother base.' % len(data['data']))
-            g.c_globals.task_handler.extend(data['data'])
-            log.info('%s total tasks to proceed' % len(g.c_globals.task_handler))
-        elif data['command'] == 'add_users' and 'data' in data:
-            log.info("Received %s users from mother base." % len(data['data']))
-            for user in data['data']:
-                g.c_globals.user_handler.append(User(user['vk_websocket'], user['vk_id']))
+        if data is None:
+            return
 
-    async def connect(self):
-        async with aiohttp.ClientSession() as session:
-            while True:
-                try:
-                    async with session.ws_connect(self.ws_url) as ws:
-                        await self.on_connect(ws)
-                except aiohttp.ClientConnectorError as e:
-                    log.error('MotherBase caused disconnect.')
-                    log.info('Reconnecting to MotherBase in 1 second')
+        if 'pixels' in data and len(data['pixels']) > 0:
+            g.task_handler.extend(data['pixels'])
+            log.info(f'Retrieved {len(data["pixels"])} tasks from the base.')
 
-                await asyncio.sleep(1)
+    async def send_stats(self):
+        stat = g.stats.get_stats_assoc()  # maybe g.bruh_moment
+        await r.post(f'{self.url}/c/send-stats', data={'id': self.id, 'statistics': stat})
 
-    async def make_handshake(self, ws):
-        c_info = {'type': 'connect', 'data': {'token': self.id}}
-        await ws.send_json(c_info)
+    async def get_users(self):
+        while True:
+            data = await r.post(f'{self.url}/c/get-users', data={'id': self.id})
 
-    async def on_connect(self, ws):
-        self.alive = True
-        await self.make_handshake(ws)
+            if data is None:
+                continue
 
-        async for msg in ws:
-            if msg.type == aiohttp.WSMsgType.TEXT:
-                await self.process_message(ws, msg.data)
-            elif msg.type == aiohttp.WSMsgType.ERROR:
-                self.alive = False
+            if data['status'] == 'success' and len(data['users']) > 0:
                 break
+            await asyncio.sleep(15)
+
+        users = data['users']
+        log.info(f'Retrieved {len(users)} users from the base.')
+        for user in users:
+            g.user_handler.append(User(user['vk_websocket'], user['vk_id'], user['delay']))

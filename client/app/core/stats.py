@@ -1,4 +1,4 @@
-import core.globals as g
+from app.main import g
 
 
 class Stats:
@@ -23,17 +23,17 @@ class Stats:
 
     def count_online(self):
         k = 0
-        for user in g.c_globals.user_handler:
+        for user in g.user_handler:
             if user.is_alive():
                 k += 1
 
-        self.total = len(g.c_globals.user_handler)
+        self.total = len(g.user_handler)
         self.online = k
         self.offline = self.total - k
 
     def count_can_draw(self):
         k = 0
-        for user in g.c_globals.user_handler:
+        for user in g.user_handler:
             if user.can_draw():
                 k += 1
 

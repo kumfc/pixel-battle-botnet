@@ -1,20 +1,20 @@
 from asyncio import ensure_future
-from typing import List
 
 from aiohttp import web
 
-from interactors.client_connection import ClientConnectionInteractor
-from interactors.tasks import TaskInteractor
-from interactors.users import UserInteractor
-from schema import AddUsersSchema, CreateTaskSchema, SetEnabledTaskSchema
+from app.interactors.client import ClientInteractor
+from app.interactors.tasks import TaskInteractor
+from app.interactors.users import UserInteractor
+from app.schema import AddUsersSchema, CreateTaskSchema, SetEnabledTaskSchema
+
+from app.schema import ClientStatisticsSchema
 
 
-def endpoints(database, clients: List):
+def endpoints(database):
     user_interactor = UserInteractor(database.users)
-    task_interactor = TaskInteractor(database.tasks, clients)
-    client_connection_interactor = ClientConnectionInteractor(clients, database.users)
+    task_interactor = TaskInteractor(database.tasks)
+    client_interactor = ClientInteractor(database.users)
 
-    ensure_future(task_interactor.process_tasks())
     ensure_future(task_interactor.update_canvas())
 
     async def add_users(request):
@@ -31,27 +31,8 @@ def endpoints(database, clients: List):
 
         return web.json_response({'status': 'success'})
 
-    async def get_statistics(request):
-        data = await request.json()
-
-        return web.json_response({'status': 'success'})
-
-    async def handle_clients(request):
-        ws = web.WebSocketResponse()
-        await ws.prepare(request)
-
-        await client_connection_interactor.handle(ws)
-
-        return ws
-
     async def clear_all_users(request):
-        await client_connection_interactor.clear_all_users()
-
-        return web.json_response({'status': 'success'})
-
-    async def distribute_users_to_clients(request):
-        for client in clients:
-            await client_connection_interactor.give_users_to_client(client, database.users)
+        await client_interactor.clear_all_users()
 
         return web.json_response({'status': 'success'})
 
@@ -60,4 +41,35 @@ def endpoints(database, clients: List):
         schema_data = SetEnabledTaskSchema(**data)
         await task_interactor.set_enabled(schema_data)
 
-    return add_users, create_task, get_statistics, handle_clients, clear_all_users, distribute_users_to_clients, set_enabled_task
+    async def c_send_stats(request):
+        data = await request.json()
+
+        client_interactor.print_stat(data['id'], ClientStatisticsSchema(**data['statistics']))
+
+        return web.json_response({'status': 'success'})
+
+    async def c_get_pixels(request):
+        data = await request.json()
+
+        pixels = await task_interactor.get_pixels(data['expected_count'])
+
+        return web.json_response({'status': 'success', 'pixels': pixels})
+
+    async def c_get_users(request):
+        if not user_interactor.users_loaded:
+            return web.json_response({'status': 'failed'})
+
+        data = await request.json()
+
+        users = await client_interactor.get_users_for_client(data['id'])
+
+        return web.json_response({'status': 'success', 'users': users})
+
+    async def c_shutdown(request):
+        data = await request.json()
+
+        await client_interactor.take_away_all_users_from_client(data['id'])
+
+        return web.json_response({'status': 'success'})
+
+    return add_users, create_task, clear_all_users, set_enabled_task, c_send_stats, c_get_pixels, c_get_users, c_shutdown
