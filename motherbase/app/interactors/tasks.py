@@ -59,7 +59,7 @@ class TaskInteractor:
         while True:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get('https://i1l.ru/pixel.png') as resp:
+                    async with session.get('https://dev.umfc.xyz/pixel.png') as resp:
                         im = Image.open(io.BytesIO(await resp.read()))
                         self.current_canvas = im.load()
             except Exception as exc:
