@@ -1,4 +1,4 @@
-# VK Pixel Battle 2019 Botnet
+# VK Pixel Battle 2019/20 Botnet
 A tool written for BAGOSI during the VK Pixel Battle 2019 annual event.\
 Some of the features remains unpolished so they are not going to be in this release.
 
